@@ -4,12 +4,12 @@ project(BatchBrainMRTumorSegmentation)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation")
+set(EXTENSION_HOMEPAGE "https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation#readme")
 set(EXTENSION_CATEGORY "Segmentation")
 set(EXTENSION_CONTRIBUTORS "Saima Safdar (The University of Western Australia)")
-set(EXTENSION_DESCRIPTION "Automatic batch brain tumour segmentation")
-set(EXTENSION_ICONURL "https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation/blob/main/BatchBrainMRTumorSegmentation.png")
-set(EXTENSION_SCREENSHOTURLS "https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation/blob/main/Screenshot%20from%202024-02-06%2012-11-03.png")
+set(EXTENSION_DESCRIPTION "Supports segmentation of brain tumor for a cohort at once without any human intervention.")
+set(EXTENSION_ICONURL "https://raw.githubusercontent.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation/main/BatchBrainMRTumorSegmentation.png")
+set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation/main/Screenshot%20from%202024-02-06%2012-11-03.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
@@ -19,8 +19,8 @@ include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
 # Extension modules
-## NEXT_MODULE
 add_subdirectory(BatchBrainMRTumorSegmentation)
+## NEXT_MODULE
 
 #-----------------------------------------------------------------------------
 include(${Slicer_EXTENSION_GENERATE_CONFIG})
