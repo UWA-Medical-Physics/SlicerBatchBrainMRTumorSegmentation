@@ -1,13 +1,13 @@
 import os
-import unittest
+import csv
+import json
 import logging
 import vtk, qt, ctk, slicer
-import slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 #
-# Brain tumor Segmentation
+# Batch brain MRI tumor segmentation
 #
 
 class BatchBrainMRTumorSegmentation(ScriptedLoadableModule):
@@ -17,71 +17,15 @@ class BatchBrainMRTumorSegmentation(ScriptedLoadableModule):
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "BatchBrainMRTumorSegmentation"  # TODO: make this more human readable by adding spaces
-    self.parent.categories = ["Slicer-BratsToolkit"]  # TODO: set categories (folders where the module shows up in the module selector)
-    self.parent.dependencies = []  # TODO: add here list of module names that this module requires
-    self.parent.contributors = ["Saima Safdar (The University of Western Australia)"]  # TODO: replace with "Firstname Lastname (Organization)"
-    # TODO: update with short description of the module and a link to online module documentation
-    self.parent.helpText = """This extension is for automatically segmenting the brain tumor (glioblastoma) for a number of patients using brats toolkit.
-This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://github.com/organization/projectname#BatchBrainMRTumorSegmentation">module documentation</a>.
+    self.parent.title = "Batch Brain MRI Tumor Segmentation"
+    self.parent.categories = ["Segmentation"]
+    self.parent.dependencies = ["BraTSPreprocessor", "BraTSSegmentor", "BraTSFusionator"]
+    self.parent.contributors = ["Saima Safdar (The University of Western Australia)"]
+    self.parent.helpText = """Automates BraTS Toolkit preprocessing, segmentation, label fusion, and transformation of results back to the original MRI space for a cohort of patients.
+Clicking Apply may install BraTS-Toolkit into the selected external Python environment and download upstream containers and model files.
+See the <a href="https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation#readme">module documentation</a> for requirements and a tutorial.
 """
-    # TODO: replace with organization, grant and thanks
-    self.parent.acknowledgementText = """
-
-"""
-
-    # Additional initialization step after application startup is complete
-    slicer.app.connect("startupCompleted()", registerSampleData)
-
-#
-# Register sample data sets in Sample Data module
-#
-
-def registerSampleData():
-  """
-  Add data sets to Sample Data module.
-  """
-  # It is always recommended to provide sample data for users to make it easy to try the module,
-  # but if no sample data is available then this method (and associated startupCompeted signal connection) can be removed.
-
-  import SampleData
-  iconsPath = os.path.join(os.path.dirname(__file__), 'Resources/Icons')
-
-  # To ensure that the source code repository remains small (can be downloaded and installed quickly)
-  # it is recommended to store data sets that are larger than a few MB in a Github release.
-
-  # BatchBrainMRTumorSegmentation1
-  SampleData.SampleDataLogic.registerCustomSampleDataSource(
-    # Category and sample name displayed in Sample Data module
-    category='BatchBrainMRTumorSegmentation',
-    sampleName='BatchBrainMRTumorSegmentation1',
-    # Thumbnail should have size of approximately 260x280 pixels and stored in Resources/Icons folder.
-    # It can be created by Screen Capture module, "Capture all views" option enabled, "Number of images" set to "Single".
-    thumbnailFileName=os.path.join(iconsPath, 'BatchBrainMRTumorSegmentation.png'),
-    # Download URL and target file name
-    uris="https://github.com/Slicer/SlicerTestingData/releases/download/SHA256/998cb522173839c78657f4bc0ea907cea09fd04e44601f17c82ea27927937b95",
-    fileNames='BatchBrainMRTumorSegmentation.nrrd',
-    # Checksum to ensure file integrity. Can be computed by this command:
-    #  import hashlib; print(hashlib.sha256(open(filename, "rb").read()).hexdigest())
-    checksums = 'SHA256:998cb522173839c78657f4bc0ea907cea09fd04e44601f17c82ea27927937b95',
-    # This node name will be used when the data set is loaded
-    nodeNames='BatchBrainMRTumorSegmentation'
-  )
-
-  # BatchBrainMRTumorSegmentation2
-  SampleData.SampleDataLogic.registerCustomSampleDataSource(
-    # Category and sample name displayed in Sample Data module
-    category='BatchBrainMRTumorSegmentation',
-    sampleName='BatchBrainMRTumorSegmentation',
-    thumbnailFileName=os.path.join(iconsPath, 'BatchBrainMRTumorSegmentation.png'),
-    # Download URL and target file name
-    uris="https://github.com/Slicer/SlicerTestingData/releases/download/SHA256/1a64f3f422eb3d1c9b093d1a18da354b13bcf307907c66317e2463ee530b7a97",
-    fileNames='BatchBrainMRTumorSegmentation.nrrd',
-    checksums = 'SHA256:1a64f3f422eb3d1c9b093d1a18da354b13bcf307907c66317e2463ee530b7a97',
-    # This node name will be used when the data set is loaded
-    nodeNames='BatchBrainMRTumorSegmentation'
-  )
+    self.parent.acknowledgementText = "This work was developed at The University of Western Australia."
 
 #
 # BatchBrainMRTumorSegmentationWidget
@@ -358,24 +302,21 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
       self.logCallback(text)
       
   def installPackages(self, pythonPath):
-    #installing the brats toolkit and docker installation  
-    import sys
-    import subprocess
-    
-    #pip as subprocess
-    #subprocess.check_call([pythonPath, '-m', 'pip', 'install', 'BraTS-Toolkit'])
+    """Install BraTS Toolkit in the selected external Python if needed."""
+    from subprocess import CalledProcessError
+
+    checkCommand = [pythonPath, '-c', 'import brats_toolkit']
+    checkProcess = slicer.util.launchConsoleProcess(checkCommand, useStartupEnvironment=True)
+    try:
+      self.logProcessOutput(checkProcess)
+      self.log('BraTS-Toolkit is already installed in the selected Python environment.')
+      return
+    except CalledProcessError:
+      self.log('BraTS-Toolkit is not installed; installing it from PyPI...')
+
     cmdLine = [pythonPath, '-m', 'pip', 'install', 'BraTS-Toolkit']
     proc = slicer.util.launchConsoleProcess(cmdLine, useStartupEnvironment=True)
     self.logProcessOutput(proc)
-
-    #process out with an API in the subprocess module
-    #res = subprocess.check_call([pythonPath, '-m', 'pip', 'freeze'],     env = slicer.util.startupEnvironment())
-    #self.logProcessOutput(res)
-    #installed_packages = [r.decode().split('==')[0] for r in res.split()]
-    #print(installed_packages)
-    #installing NVIDIA container toolkit
-    
-      
   def logProcessOutput(self, proc):
     # Wait for the process to end and forward output to the log
     from subprocess import CalledProcessError
@@ -395,6 +336,23 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
     if retcode != 0:
         raise CalledProcessError(retcode, proc.args, output=proc.stdout, stderr=proc.stderr)
 
+  @staticmethod
+  def writePatientStatusFile(filePath, patients):
+    with open(filePath, 'w', newline='', encoding='utf-8') as outputFile:
+      writer = csv.DictWriter(outputFile, fieldnames=['DirPaths', 'DirNames', 'Status'])
+      writer.writeheader()
+      writer.writerows(patients)
+
+  @staticmethod
+  def cliScriptPath(moduleName):
+    try:
+      modulePath = slicer.util.modulePath(moduleName)
+    except (AttributeError, NameError) as exc:
+      raise RuntimeError(f"Required CLI module '{moduleName}' is not installed.") from exc
+    if not modulePath or not os.path.isfile(modulePath):
+      raise RuntimeError(f"Cannot locate the script for required CLI module '{moduleName}'.")
+    return modulePath
+
   def process(self, nnModels, directoryPath, pythonPath, patientID): 
     """
     #, imageThreshold, invert=False, showResult=True):
@@ -406,71 +364,54 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
     :param patientID: an integer indicating the patient ID to start processing from
     
     """
-    #a method to call for installing the brats toolkit and docker requirements
+    if not nnModels:
+      raise ValueError('Select at least one neural-network model.')
+    if not directoryPath or not os.path.isdir(directoryPath):
+      raise ValueError('Select an existing patient data directory.')
+    if not pythonPath or not os.path.isfile(pythonPath):
+      raise ValueError('Select an existing external Python executable.')
+    if patientID < 0:
+      raise ValueError('Patient ID must not be negative.')
+
     self.installPackages(pythonPath)
-    import os
-    print(pythonPath)
-    print(os.path.dirname(__file__))
     import time
-    import os
     import re
-    import csv
-    import pandas as pd
     startTime = time.time()
     self.log('Processing started............\n')
-    mDirName = os.path.basename(directoryPath)
-    print(mDirName)
-    #creating a dataframe that contains the patinet ID and dir anme and the directory path
-    #search for the patient to get dir name and dir path to start working on that directory
-    print(nnModels)
-    dirPaths = []
-    dirNames = []
-    for root, dirs, files in os.walk(directoryPath, topdown=False):
-            dirs.sort()
-            for dir in [os.path.join(root,d) for d in dirs]:
-                rx = re.compile(r"^.*/"+re.escape(mDirName)+r"/.*APT.*\d+$", re.I)
-                print(rx)
-                if rx.match(dir):
-                    dirPaths.append(dir)#name of the currently working directory path of the patient
-                    dirNames.append(os.path.basename(dir))#name of the study
-                    #keep the name of the patient in ascending order in a file to keep track of the patient working on
-                
-    
-    from pathlib import Path
-    print(directoryPath)
-    filepath = directoryPath+"/patients_id.csv"
-    print(filepath)
-    #filepath.parent.mkdir(parents=True, exist_ok=True)
-    import numpy as np
-    df = pd.DataFrame(list(zip(dirPaths, dirNames)), columns =['DirPaths', 'DirNames'])
-    df['Status'] = np.nan
-    df.to_csv(filepath, index=True)
-    #save patient id in the file at the end of the for loop to keep track of the patient id and start the loop from onward
-    
-    
-    for patientID in range(patientID,len(df)):
-    
-        print(df.iloc[patientID].DirNames)
-        print(df.index.get_loc(patientID))
-        patID = df.index.get_loc(patientID)
-        startPatientDirName = df.iloc[patientID].DirNames
-        startPatientDirPath = df.iloc[patientID].DirPaths
+    patients = []
+    patientNamePattern = re.compile(r'.*APT.*\d+$', re.IGNORECASE)
+    for root, directoryNames, _files in os.walk(directoryPath, topdown=False):
+      for directoryName in sorted(directoryNames):
+        if patientNamePattern.match(directoryName):
+          patients.append({
+            'DirPaths': os.path.join(root, directoryName),
+            'DirNames': directoryName,
+            'Status': '',
+          })
+    patients.sort(key=lambda patient: patient['DirNames'].lower())
+
+    if not patients:
+      raise ValueError("No patient directories matching 'APT<number>' were found.")
+    if patientID >= len(patients):
+      raise ValueError(f'Patient ID {patientID} is outside the available range 0-{len(patients) - 1}.')
+
+    statusFilePath = os.path.join(directoryPath, 'patients_id.csv')
+    self.writePatientStatusFile(statusFilePath, patients)
+
+    for patientID in range(patientID, len(patients)):
+        patID = patientID
+        startPatientDirName = patients[patientID]['DirNames']
+        startPatientDirPath = patients[patientID]['DirPaths']
         self.log(startPatientDirName)
         self.log(startPatientDirPath)
-        
-        csv_input = pd.read_csv(directoryPath+'/patients_id.csv')
-        
-        
+
         #checking the files for each patient if all the original files to run the preprocessor exist or not flair, t1, t2 and t1c
-        import re
         path = startPatientDirPath
         
         #checking if the folder is empty
         if len(os.listdir(path)) == 0:
-            #add a flag in the fourth column "incomplete"
-            csv_input.loc[patientID,'Status']= "incomplete"
-            csv_input.to_csv(directoryPath+'/patients_id.csv', index=False)
-            patientID = patientID+1
+            patients[patientID]['Status'] = 'incomplete'
+            self.writePatientStatusFile(statusFilePath, patients)
             continue
         
         #checking the incomplete ones in the file
@@ -499,12 +440,11 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
 
         self.log(f"All required patient files found for patient with id = {patID} and patient directory = {startPatientDirName}\n")
         self.log(f"Starting preprocessor of the brats toolkit for patient id {patID}\n")
-        path_to_bratPreprocessor = os.path.dirname(__file__)+"/bratsPreprocessor.py"
+        path_to_bratPreprocessor = self.cliScriptPath('BraTSPreprocessor')
         print(path_to_bratPreprocessor)
         command_line = [pythonPath, path_to_bratPreprocessor ,startPatientDirPath, startPatientDirName, files[0], files[1], files[2], files[3]]
         import subprocess
-        from subprocess import check_output
-        import sys,os
+        import sys
         
         try:
           #command_results = subprocess.run(command_line, env=slicer.util.startupEnvironment())
@@ -555,9 +495,9 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
         
         self.log(f"All required patient files found for starting segmentator for patient with id = {patID} and patient directory = {startPatientDirName}\n")
         self.log(f"Starting segmentator of the brats toolkit for patient id {patID}")
-        path_to_bratSegmentor = os.path.dirname(__file__)+"/bratsSegmentor.py"
+        path_to_bratSegmentor = self.cliScriptPath('BraTSSegmentor')
         print(path_to_bratSegmentor)
-        command_line = [pythonPath, path_to_bratSegmentor, startPatientDirPath, startPatientDirName, str(nnModels)]
+        command_line = [pythonPath, path_to_bratSegmentor, startPatientDirPath, startPatientDirName, json.dumps(nnModels)]
         try:
             print("inside segmentator")
             proc = slicer.util.launchConsoleProcess(command_line, useStartupEnvironment=True)
@@ -595,9 +535,9 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
             
         self.log(f"All required patient files found to proceed with fusionator for patient with id = {patID} and patient directory = {startPatientDirName}\n")    
         self.log("Starting fusionator of the brats toolkit.............")    
-        path_to_bratFusionator = os.path.dirname(__file__)+"/bratsFusionator.py"
+        path_to_bratFusionator = self.cliScriptPath('BraTSFusionator')
         print( path_to_bratFusionator)
-        command_line = [pythonPath, path_to_bratFusionator ,  startPatientDirPath, startPatientDirName, str(nnModels)]
+        command_line = [pythonPath, path_to_bratFusionator ,  startPatientDirPath, startPatientDirName, json.dumps(nnModels)]
         try:
             print("inside fusionator", startPatientDirPath, startPatientDirName)
             proc = slicer.util.launchConsoleProcess(command_line, useStartupEnvironment=True)
@@ -608,9 +548,11 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
             
         except subprocess.CalledProcessError as e:
             print("exception")
+            self.log(str(e))
             with open(directoryPath+"/failed_patient.txt", "a") as f:
                 f.write(str(patID))
                 f.write("\n")
+            return
         
         #after performing the fusionator do the inverse transform and apply it to the segmentation and save the segmentation in a seperate output folder   
         registrationFilepath = startPatientDirPath+"/output/registrations/output_native_t1_to_brats_0GenericAffine.mat"
@@ -655,82 +597,15 @@ class BatchBrainMRTumorSegmentationLogic(ScriptedLoadableModuleLogic):
         
         #Now save all the transformed final file s to a folder
         transformedFilesPath = startPatientDirPath+"/outputFinal"
-        
+        os.makedirs(transformedFilesPath, exist_ok=True)
+
         slicer.util.saveNode(labelVolumeNode, transformedFilesPath+"/transMav-label.nrrd")
         slicer.util.saveNode(labelVolumeNode1, transformedFilesPath+"/transSimple-label.nrrd")
         slicer.mrmlScene.Clear(0)
-        
-        csv_input.loc[patientID,"Status"]= "complete"
-        csv_input.to_csv(directoryPath+'/patients_id.csv', index=False)
+
+        patients[patientID]['Status'] = 'complete'
+        self.writePatientStatusFile(statusFilePath, patients)
       
         
         stopTime = time.time()
         self.log('Processing completed in {0:.2f} seconds\n'.format(stopTime-startTime))
-
-# #
-# BatchBrainMRTumorSegmentationTest
-#
-
-class BatchBrainMRTumorSegmentationTest(ScriptedLoadableModuleTest):
-  """
-  This is the test case for your scripted module.
-  Uses ScriptedLoadableModuleTest base class, available at:
-  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-  """
-
-  def setUp(self):
-    """ Do whatever is needed to reset the state - typically a scene clear will be enough.
-    """
-    slicer.mrmlScene.Clear()
-
-  def runTest(self):
-    """Run as few or as many tests as needed here.
-    """
-    self.setUp()
-    self.test_BatchBrainMRTumorSegmentation1()
-
-  def test_BatchBrainMRTumorSegmentation1(self):
-    """ Ideally you should have several levels of tests.  At the lowest level
-    tests should exercise the functionality of the logic with different inputs
-    (both valid and invalid).  At higher levels your tests should emulate the
-    way the user would interact with your code and confirm that it still works
-    the way you intended.
-    One of the most important features of the tests is that it should alert other
-    developers when their changes will have an impact on the behavior of your
-    module.  For example, if a developer removes a feature that you depend on,
-    your test should break so they know that the feature is needed.
-    """
-
-    self.delayDisplay("Starting the test")
-
-    # Get/create input data
-
-    import SampleData
-    registerSampleData()
-    inputVolume = SampleData.downloadSample('BatchBrainMRTumorSegmentation1')
-    self.delayDisplay('Loaded test data set')
-
-    inputScalarRange = inputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(inputScalarRange[0], 0)
-    self.assertEqual(inputScalarRange[1], 695)
-
-    outputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode")
-    threshold = 100
-
-    # Test the module logic
-
-    logic = BatchBrainMRTumorSegmentationLogic()
-
-    # Test algorithm with non-inverted threshold
-    logic.process(inputVolume, outputVolume, threshold, True)
-    outputScalarRange = outputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(outputScalarRange[0], inputScalarRange[0])
-    self.assertEqual(outputScalarRange[1], threshold)
-
-    # Test algorithm with inverted threshold
-    logic.process(inputVolume, outputVolume, threshold, False)
-    outputScalarRange = outputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(outputScalarRange[0], inputScalarRange[0])
-    self.assertEqual(outputScalarRange[1], inputScalarRange[1])
-
-    self.delayDisplay('Test passed')

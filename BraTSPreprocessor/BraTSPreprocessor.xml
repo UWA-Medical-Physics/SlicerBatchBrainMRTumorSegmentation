@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Segmentation.BraTS Toolkit</category>
+  <index>0</index>
+  <title>BraTS Preprocessor</title>
+  <description><![CDATA[Preprocess four MRI modalities using BraTS Toolkit.]]></description>
+  <version>1.0.0</version>
+  <documentation-url>https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation#readme</documentation-url>
+  <license>BSD-3-Clause</license>
+  <contributor>Saima Safdar (The University of Western Australia)</contributor>
+  <acknowledgements><![CDATA[Developed at The University of Western Australia.]]></acknowledgements>
+  <parameters>
+    <label>Inputs</label>
+    <description><![CDATA[Patient directory and MRI modalities.]]></description>
+    <directory>
+      <name>directoryPath</name>
+      <label>Patient directory</label>
+      <channel>input</channel>
+      <index>0</index>
+    </directory>
+    <string>
+      <name>patientName</name>
+      <label>Patient name</label>
+      <index>1</index>
+    </string>
+    <file>
+      <name>flairFile</name>
+      <label>FLAIR image</label>
+      <channel>input</channel>
+      <index>2</index>
+    </file>
+    <file>
+      <name>t1File</name>
+      <label>T1 image</label>
+      <channel>input</channel>
+      <index>3</index>
+    </file>
+    <file>
+      <name>t1cFile</name>
+      <label>Contrast-enhanced T1 image</label>
+      <channel>input</channel>
+      <index>4</index>
+    </file>
+    <file>
+      <name>t2File</name>
+      <label>T2 image</label>
+      <channel>input</channel>
+      <index>5</index>
+    </file>
+  </parameters>
+</executable>
