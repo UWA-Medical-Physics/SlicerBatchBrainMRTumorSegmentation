@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Segmentation.BraTS Toolkit</category>
+  <index>1</index>
+  <title>BraTS Segmentor</title>
+  <description><![CDATA[Run selected BraTS Toolkit segmentation models on preprocessed MRI data.]]></description>
+  <version>1.0.0</version>
+  <documentation-url>https://github.com/UWA-Medical-Physics/SlicerBatchBrainMRTumorSegmentation#readme</documentation-url>
+  <license>BSD-3-Clause</license>
+  <contributor>Saima Safdar (The University of Western Australia)</contributor>
+  <acknowledgements><![CDATA[Developed at The University of Western Australia.]]></acknowledgements>
+  <parameters>
+    <label>Inputs</label>
+    <description><![CDATA[Preprocessed patient directory and model identifiers.]]></description>
+    <directory>
+      <name>directoryPath</name>
+      <label>Patient directory</label>
+      <channel>input</channel>
+      <index>0</index>
+    </directory>
+    <string>
+      <name>patientName</name>
+      <label>Patient name</label>
+      <index>1</index>
+    </string>
+    <string>
+      <name>models</name>
+      <label>Models (JSON list)</label>
+      <description><![CDATA[For example: ["isen-20", "scan-20"]]]></description>
+      <index>2</index>
+    </string>
+  </parameters>
+</executable>

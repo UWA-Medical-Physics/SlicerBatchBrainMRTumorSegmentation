@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>BrainTumorSegmentation</class>
- <widget class="qMRMLWidget" name="BrainTumorSegmentation">
+ <class>BatchBrainMRTumorSegmentation</class>
+ <widget class="qMRMLWidget" name="BatchBrainMRTumorSegmentation">
   <property name="enabled">
    <bool>true</bool>
   </property>
