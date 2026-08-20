@@ -16,6 +16,9 @@ set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 # Extension dependencies
 find_package(Slicer REQUIRED)
 include(${Slicer_USE_FILE})
+# The lightweight packaging environment used by ExtensionsIndex does not load
+# this macro from UseSlicer.cmake, so include it explicitly.
+include(SlicerMacroBuildScriptedCLI)
 
 #-----------------------------------------------------------------------------
 # Extension modules
